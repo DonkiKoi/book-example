@@ -1,0 +1,101 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-and-push-image
+  namespace: tekton
+spec:
+  params:
+    - default: "https://github.com/donkikoi/book-example.git"
+      description: Source to the GIT
+      name: git-url
+      type: string
+    - default: dev
+      description: revision to be used
+      name: git-revision
+      type: string
+    - default: the-source
+      description: Where to checkout the source relative to the workspace
+      name: context-dir
+      type: string
+    - default: quay.io/donkikoi/person-service
+      description: the name of the target image including registry
+      name: image-name
+      type: string
+    - default: donkikoi
+      description: the username you use to access the registry
+      name: image-username
+      type: string
+    - description: The password you use to access the registry
+      name: image-password
+      type: string
+    - description: The name of the namespace to apply the result to
+      name: target-namespace
+      type: string
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: deleteExisting
+          value: "true"
+        - name: verbose
+          value: "true"
+        - name: revision
+          value: $(params.git-revision)
+        - name: subdirectory
+          value: $(params.context-dir)
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: package
+      params:
+        - name: GOALS
+          value:
+            - package
+            - "-DskipTests"
+            - "-Dquarkus.container-image.push=false"
+            - "-Dquarkus.container-image.build=false"
+        - name: CONTEXT_DIR
+          value: $(params.context-dir)/person-service
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: Task
+        name: maven-caching
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: maven-settings
+          workspace: maven-settings
+    - name: build-and-push-image
+      params:
+        - name: GOALS
+          value:
+            - package
+            - "-DskipTests"
+            - "-Dquarkus.container-image.push=true"
+            - "-Dquarkus.container-image.build=true"
+            - "-Dquarkus.container-image.builder=jib"
+            - "-Dquarkus.container-image.image=$(params.image-name)"
+            - "-Dquarkus.container-image.username=$(params.image-username)"
+            - "-Dquarkus.container-image.password=$(params.image-password)"
+        - name: CONTEXT_DIR
+          value: $(params.context-dir)/person-service
+      runAfter:
+        - package
+      taskRef:
+        kind: Task
+        name: maven-caching
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: maven-settings
+          workspace: maven-settings
+  workspaces:
+    - name: shared-workspace
+      optional: false
+    - name: maven-settings
+      optional: false
