@@ -4,7 +4,7 @@ metadata:
   name: new-test-pipeline
 spec:
   params:
-    - default: 'https://github.com/wpernath/quarkus-simple.git'
+    - default: "https://github.com/wpernath/quarkus-simple.git"
       description: Source to the GIT
       name: git-url
       type: string
@@ -30,9 +30,9 @@ spec:
         - name: url
           value: $(params.git-url)
         - name: deleteExisting
-          value: 'true'
+          value: "true"
         - name: verbose
-          value: 'true'
+          value: "true"
         - name: revision
           value: $(params.git-revision)
       taskRef:
@@ -46,14 +46,14 @@ spec:
         - name: GOALS
           value:
             - package
-            - '-DskipTests'
+            - "-DskipTests"
         - name: PROXY_PROTOCOL
           value: http
         - name: CONTEXT_DIR
           value: .
       runAfter:
         - git-clone
-      taskRef:        
+      taskRef:
         kind: Task
         name: maven-caching
       workspaces:
@@ -64,14 +64,14 @@ spec:
         - name: maven-settings
           workspace: maven-settings
     - name: apply-kustomize
-      params: 
+      params:
         - name: kustomize-dir
           value: kustomize_ext/overlays/dev
         - name: target-namespace
           value: $(params.target-namespace)
         - name: image-name
           value: $(params.image-name)
-      taskRef:        
+      taskRef:
         kind: Task
         name: kustomize
       runAfter:

@@ -4,7 +4,7 @@ metadata:
   name: build-and-push-image
 spec:
   params:
-    - default: 'https://github.com/wpernath/book-example.git'
+    - default: "https://github.com/wpernath/book-example.git"
       description: Source to the GIT
       name: git-url
       type: string
@@ -34,9 +34,9 @@ spec:
         - name: url
           value: $(params.git-url)
         - name: deleteExisting
-          value: 'true'
+          value: "true"
         - name: verbose
-          value: 'true'
+          value: "true"
         - name: revision
           value: $(params.git-revision)
         - name: subdirectory
@@ -52,14 +52,14 @@ spec:
         - name: GOALS
           value:
             - package
-            - '-DskipTests'
-            - '-Dquarkus.container-image.push=false'
-            - '-Dquarkus.container-image.build=false'
+            - "-DskipTests"
+            - "-Dquarkus.container-image.push=false"
+            - "-Dquarkus.container-image.build=false"
         - name: CONTEXT_DIR
           value: "$(params.context-dir)/person-service"
       runAfter:
         - git-clone
-      taskRef:        
+      taskRef:
         kind: Task
         name: maven-caching
       workspaces:
@@ -72,13 +72,13 @@ spec:
         - name: GOALS
           value:
             - package
-            - '-DskipTests'
-            - '-Dquarkus.container-image.push=true'
-            - '-Dquarkus.container-image.build=true'
-            - '-Dquarkus.container-image.builder=jib'
-            - '-Dquarkus.container-image.image=$(params.image-name)'
-            - '-Dquarkus.container-image.username=$(params.image-username)'
-            - '-Dquarkus.container-image.password=$(params.image-password)'
+            - "-DskipTests"
+            - "-Dquarkus.container-image.push=true"
+            - "-Dquarkus.container-image.build=true"
+            - "-Dquarkus.container-image.builder=jib"
+            - "-Dquarkus.container-image.image=$(params.image-name)"
+            - "-Dquarkus.container-image.username=$(params.image-username)"
+            - "-Dquarkus.container-image.password=$(params.image-password)"
         - name: CONTEXT_DIR
           value: "$(params.context-dir)/person-service"
       runAfter:
@@ -92,7 +92,7 @@ spec:
         - name: maven-settings
           workspace: maven-settings
     - name: apply-kustomize
-      params: 
+      params:
         - name: kustomize-dir
           value: $(params.context-dir)/kustomize-ext/overlays/dev
         - name: target-namespace
@@ -101,7 +101,7 @@ spec:
           value: $(params.image-name)
         - name: image-digest-path
           value: $(params.context-dir)/person-service/target
-      taskRef:        
+      taskRef:
         kind: Task
         name: kustomize
       runAfter:

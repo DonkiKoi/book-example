@@ -31,5 +31,3 @@ spec:
         echo " DIGEST: $DIGEST"
         echo
         echo -n $DIGEST > $(results.DIGEST.path)
-        
-    
