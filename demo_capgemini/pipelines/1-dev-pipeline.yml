@@ -1,0 +1,85 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: dev-pipeline
+spec:
+  params:
+    - default: "https://github.com/DonkiKoi/book-example.git"
+      description: URL of the Git Repo for the source
+      name: git-url
+      type: string
+    - default: demo
+      description: revision to be used
+      name: git-revision
+      type: string
+    - default: person-service
+      description: context dir within git repo where the source code is
+      name: git-context
+      type: string
+  tasks:
+    - name: clone-source
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+        - name: submodules
+          value: "true"
+        - name: deleteExisting
+          value: "true"
+        - name: verbose
+          value: "false"
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: repository
+    - name: package
+      params:
+        - name: GOALS
+          value:
+            - package
+            - "-DskipTests"
+            - "-Dquarkus.container-image.build=false"
+            - "-Dquarkus.container-image.push=false"
+        - name: CONTEXT_DIR
+          value: $(params.git-context)
+      runAfter:
+        - clone-source
+        - clone-config
+      taskRef:
+        kind: Task
+        name: maven-caching
+      workspaces:
+        - name: source
+          workspace: repository
+        - name: maven-settings
+          workspace: maven-settings
+    - name: build-image
+      params:
+        - name: GOALS
+          value:
+            - package
+            - "-DskipTests"
+            - "-Dquarkus.container-image.build=true"
+            - "-Dquarkus.container-image.push=true"
+            - "-Dquarkus.container-image.username=$(params.repo-username)"
+            - "-Dquarkus.container-image.password=$(params.repo-password)"
+            - "-Dquarkus.container-image.image=$(params.image-name)"
+        - name: CONTEXT_DIR
+          value: the-source/$(params.git-context)
+      runAfter:
+        - package
+      taskRef:
+        kind: Task
+        name: maven-caching
+      workspaces:
+        - name: source
+          workspace: source
+        - name: maven-settings
+          workspace: maven-settings
+  workspaces:
+    - name: repository
+    - name: maven-settings
+    - name: maven-cache
